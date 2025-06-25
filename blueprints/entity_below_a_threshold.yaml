@@ -1,61 +1,72 @@
 blueprint:
   name: Notify When Entity is Below Threshold
-  description: Sends a notification when an entity's numeric state falls below a specified threshold.
+  description: Notify when a selected entity's state falls below a defined threshold value.
   domain: automation
   input:
     target_entity:
       name: Entity to Monitor
-      description: The entity whose numeric state will be monitored.
+      description: Choose the sensor/entity whose state you want to monitor.
       selector:
         entity:
           domain: sensor
 
-    notify_service:
-      name: Notification Service
-      description: The name of the notification service (e.g., `notify.mobile_app_your_phone`).
-      selector:
-        text:
-
-    threshold:
+    threshold_value:
       name: Threshold Value
-      description: Specify the threshold value for the entity. Default is 2.
+      description: Notify when the entity falls below this numeric value.
       default: 2
       selector:
         number:
           min: 0
           max: 100
-          step: 0.1
+          step: 1
+
+    notify_device:
+      name: Devices to Notify (Mobile App)
+      description: Select one or more devices to receive the notification.
+      default: []
+      selector:
+        device:
+          filter:
+            integration: mobile_app
+          multiple: true
 
     notification_title:
       name: Notification Title
-      description: The title of the notification message.
+      description: Title of the notification.
       default: "Threshold Alert!"
       selector:
-        text:
+        text
 
     notification_message:
       name: Notification Message
-      description: The body of the notification message. You can use placeholders like `{{ entity_name }}`, `{{ entity_id }}`, and `{{ state }}`.
-      default: "The value of {{ entity_name }} has dropped below the threshold. Current value: {{ state }}."
+      description: Message to include in the notification. You can use placeholders such as `{{ entity_name }}` and `{{ state }}`.
+      default: "The value of {{ entity_name }} is now {{ state }}."
       selector:
-        text:
+        text
+
+mode: restart
+
+variables:
+  entity_id: !input target_entity
+  threshold: !input threshold_value
+  notify_title: !input notification_title
+  notify_message: !input notification_message
+  notify_device: !input notify_device
 
 trigger:
   - platform: numeric_state
     entity_id: !input target_entity
-    below: !input threshold
+    below: !input threshold_value
 
 action:
-  - service: !input notify_service
-    data:
-      title: !input notification_title
-      message: >
-        {% set entity_id = trigger.entity_id %}
-        {% set entity_name = states[entity_id].name %}
-        {% set state = states[entity_id].state %}
-        {{ (!input.notification_message)
-          | replace('{{ entity_name }}', entity_name)
-          | replace('{{ entity_id }}', entity_id)
-          | replace('{{ state }}', state) }}
-
-mode: single
+  - alias: Notify mobile devices
+    repeat:
+      for_each: !input notify_device
+      sequence:
+        - service: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+          data:
+            title: !input notification_title
+            message: >
+              {% set entity_name = states[entity_id].name %}
+              {% set state = states[entity_id].state %}
+              {{ notify_message | replace('{{ entity_name }}', entity_name) | replace('{{ state }}', state) }}
