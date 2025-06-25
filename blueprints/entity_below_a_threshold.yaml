@@ -12,10 +12,9 @@ blueprint:
 
     notify_service:
       name: Notification Service
-      description: Choose a notification service (e.g., `notify.mobile_app_your_phone`).
+      description: The name of the notification service (e.g., `notify.mobile_app_your_phone`).
       selector:
-        service:
-          domain: notify
+        text:
 
     threshold:
       name: Threshold Value
@@ -36,7 +35,7 @@ blueprint:
 
     notification_message:
       name: Notification Message
-      description: The message content for the notification. You can use placeholders like '{{ entity_name }}', '{{ entity_id }}', and '{{ state }}'.
+      description: The body of the notification message. You can use placeholders like `{{ entity_name }}`, `{{ entity_id }}`, and `{{ state }}`.
       default: "The value of {{ entity_name }} has dropped below the threshold. Current value: {{ state }}."
       selector:
         text:
