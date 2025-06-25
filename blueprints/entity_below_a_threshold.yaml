@@ -1,0 +1,60 @@
+blueprint:
+  name: Notify When Entity is Below 2
+  description: Sends a notification when an entity's numeric state is below 2.
+  domain: automation
+  input:
+    target_entity:
+      name: Entity to Monitor
+      description: The entity whose state will be monitored.
+      selector:
+        entity:
+          domain: sensor
+          
+    notify_service:
+      name: Notify Service
+      description: Choose a notification service, e.g., `notify.mobile_app_your_phone`.
+      selector:
+        action:
+          entity:
+            domain: notify
+
+    threshold:
+      name: Threshold Value
+      description: Specify the threshold value for the entity. Default is 2.
+      default: 2
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+
+    notification_title:
+      name: Notification Title
+      description: Title of the notification message.
+      default: "Threshold Alert!"
+      selector:
+        text:
+
+    notification_message:
+      name: Notification Message
+      description: Message content for the notification. You can use placeholders like '{{ entity_name }}' and '{{ entity_id }}'.
+      default: "The value of {{ entity_name }} is now {{ state }}."
+      selector:
+        text:
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input target_entity
+    below: !input threshold
+
+action:
+  - service: !input notify_service
+    data:
+      title: !input notification_title
+      message: >
+        {% set entity_id = trigger.entity_id %}
+        {% set entity_name = states[entity_id].name %}
+        {% set state = states[entity_id].state %}
+        {{ (!input notification_message) | replace('{{ entity_name }}', entity_name) | replace('{{ entity_id }}', entity_id) | replace('{{ state }}', state) }}
+
+mode: single
