@@ -1,22 +1,21 @@
 blueprint:
-  name: Notify When Entity is Below 2
-  description: Sends a notification when an entity's numeric state is below 2.
+  name: Notify When Entity is Below Threshold
+  description: Sends a notification when an entity's numeric state falls below a specified threshold.
   domain: automation
   input:
     target_entity:
       name: Entity to Monitor
-      description: The entity whose state will be monitored.
+      description: The entity whose numeric state will be monitored.
       selector:
         entity:
           domain: sensor
-          
+
     notify_service:
-      name: Notify Service
-      description: Choose a notification service, e.g., `notify.mobile_app_your_phone`.
+      name: Notification Service
+      description: Choose a notification service (e.g., `notify.mobile_app_your_phone`).
       selector:
-        action:
-          entity:
-            domain: notify
+        service:
+          domain: notify
 
     threshold:
       name: Threshold Value
@@ -30,15 +29,15 @@ blueprint:
 
     notification_title:
       name: Notification Title
-      description: Title of the notification message.
+      description: The title of the notification message.
       default: "Threshold Alert!"
       selector:
         text:
 
     notification_message:
       name: Notification Message
-      description: Message content for the notification. You can use placeholders like '{{ entity_name }}' and '{{ entity_id }}'.
-      default: "The value of {{ entity_name }} is now {{ state }}."
+      description: The message content for the notification. You can use placeholders like '{{ entity_name }}', '{{ entity_id }}', and '{{ state }}'.
+      default: "The value of {{ entity_name }} has dropped below the threshold. Current value: {{ state }}."
       selector:
         text:
 
@@ -55,6 +54,9 @@ action:
         {% set entity_id = trigger.entity_id %}
         {% set entity_name = states[entity_id].name %}
         {% set state = states[entity_id].state %}
-        {{ (!input notification_message) | replace('{{ entity_name }}', entity_name) | replace('{{ entity_id }}', entity_id) | replace('{{ state }}', state) }}
+        {{ (!input.notification_message)
+          | replace('{{ entity_name }}', entity_name)
+          | replace('{{ entity_id }}', entity_id)
+          | replace('{{ state }}', state) }}
 
 mode: single
